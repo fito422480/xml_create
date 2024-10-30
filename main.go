@@ -15,10 +15,10 @@ type RDE struct {
 }
 
 type DE struct {
-	GOpeDE     GOpeDE     `xml:"gOpeDE"`
-	GTimb      GTimb      `xml:"gTimb"`
+	GOpeDE      GOpeDE      `xml:"gOpeDE"`
+	GTimb       GTimb       `xml:"gTimb"`
 	GDatGralOpe GDatGralOpe `xml:"gDatGralOpe"`
-	GDtipDE    GDtipDE    `xml:"gDtipDE"`
+	GDtipDE     GDtipDE     `xml:"gDtipDE"`
 }
 
 type GOpeDE struct {
@@ -34,7 +34,7 @@ type GTimb struct {
 }
 
 type GDatGralOpe struct {
-	DFeEmiDE string `xml:"dFeEmiDE"`
+	DFeEmiDE string  `xml:"dFeEmiDE"`
 	GOpeCom  GOpeCom `xml:"gOpeCom"`
 	GEmis    GEmis   `xml:"gEmis"`
 	GDatRec  GDatRec `xml:"gDatRec"`
@@ -47,24 +47,26 @@ type GOpeCom struct {
 }
 
 type GEmis struct {
-	DRucEm   int    `xml:"dRucEm"`
+	DRucEm   string `xml:"dRucEm"`
 	DDVEmi   int    `xml:"dDVEmi"`
 	ITipCont int    `xml:"iTipCont"`
 }
 
 type GDatRec struct {
-	INatRec   int    `xml:"iNatRec"`
-	ITiOpe    int    `xml:"iTiOpe"`
-	CPaisRec  string `xml:"cPaisRec"`
-	DNomRec   string `xml:"dNomRec"`
-	ITipIDRec int    `xml:"iTipIDRec"`
-	DNumIDRec int    `xml:"dNumIDRec"`
+	INatRec    int    `xml:"iNatRec"`
+	ITiOpe     int    `xml:"iTiOpe"`
+	CPaisRec   string `xml:"cPaisRec"`
+	DNomRec    string `xml:"dNomRec"`
+	ITiContRec int    `xml:"iTiContRec"`
+	DRucRec    int    `xml:"dRucRec"`
+	DDVRec     int    `xml:"dDVRec"`
 }
 
 type GDtipDE struct {
 	GCamFE   GCamFE   `xml:"gCamFE"`
 	GCamCond GCamCond `xml:"gCamCond"`
 	GCamItem GCamItem `xml:"gCamItem"`
+	GCamEsp  GCamEsp  `xml:"gCamEsp"`
 }
 
 type GCamFE struct {
@@ -72,7 +74,7 @@ type GCamFE struct {
 }
 
 type GCamCond struct {
-	ICondOpe int       `xml:"iCondOpe"`
+	ICondOpe   int        `xml:"iCondOpe"`
 	GPaConEIni GPaConEIni `xml:"gPaConEIni"`
 }
 
@@ -83,30 +85,37 @@ type GPaConEIni struct {
 }
 
 type GCamItem struct {
-	DCodInt       string  `xml:"dCodInt"`
-	DDesProSer    string  `xml:"dDesProSer"`
-	DCantProSer   int     `xml:"dCantProSer"`
-	GCamIVA       GCamIVA `xml:"gCamIVA"`
+	DCodInt       string     `xml:"dCodInt"`
+	DDesProSer    string     `xml:"dDesProSer"`
+	DCantProSer   int        `xml:"dCantProSer"`
+	GCamIVA       GCamIVA    `xml:"gCamIVA"`
 	GValorItem    GValorItem `xml:"gValorItem"`
 }
 
 type GCamIVA struct {
-	IAfecIVA    int     `xml:"iAfecIVA"`
-	DTasaIVA    int     `xml:"dTasaIVA"`
-	DBasGravIVA int     `xml:"dBasGravIVA"`
-	DLiqIVAItem int     `xml:"dLiqIVAItem"`
+	IAfecIVA    int `xml:"iAfecIVA"`
+	DTasaIVA    int `xml:"dTasaIVA"`
+	DBasGravIVA int `xml:"dBasGravIVA"`
+	DLiqIVAItem int `xml:"dLiqIVAItem"`
 }
 
 type GValorItem struct {
-	DPUniProSer     float64 `xml:"dPUniProSer"`
-	DTotBruOpeItem  float64 `xml:"dTotBruOpeItem"`
+	DPUniProSer     float64        `xml:"dPUniProSer"`
+	DTotBruOpeItem  float64        `xml:"dTotBruOpeItem"`
 	GValorRestaItem GValorRestaItem `xml:"gValorRestaItem"`
 }
 
 type GValorRestaItem struct {
-	DDescItem         int     `xml:"dDescItem"`
-	DAntGloPreUniIt   int     `xml:"dAntGloPreUniIt"`
-	DTotOpeItem       float64 `xml:"dTotOpeItem"`
+	DDescItem       int `xml:"dDescItem"`
+	DAntGloPreUniIt int `xml:"dAntGloPreUniIt"`
+}
+
+type GCamEsp struct {
+	GGrupAdi GGrupAdi `xml:"gGrupAdi"`
+}
+
+type GGrupAdi struct {
+	DVencPag string `xml:"dVencPag"`
 }
 
 func main() {
@@ -146,23 +155,27 @@ func main() {
 
 	// Procesar registros (omitimos la primera fila que es el encabezado)
 	for _, record := range records[1:] {
-		_, _ = strconv.Atoi(record[0])
-		fecha := record[1]
-		nombre := record[2]
-		numID, _ := strconv.Atoi(record[3])
-		total, _ := strconv.ParseFloat(record[4], 64)
+		// Verificar que el registro tenga al menos 5 columnas
+		if len(record) < 5 {
+			fmt.Println("Registro incompleto, omitiendo:", record)
+			continue
+		}
+
+		fecha := record[0]
+		total, _ := strconv.ParseFloat(record[1], 64)
+		ci, _ := strconv.Atoi(record[2])
+		dv, _ := strconv.Atoi(record[3])
+		nombre := record[4]
 
 		// Crear una estructura con los valores extraídos
 		rde := RDE{
 			DE: DE{
-				GOpeDE: GOpeDE{
-					ITipEmi: 1,
-				},
+				GOpeDE: GOpeDE{ITipEmi: 1},
 				GTimb: GTimb{
 					ITiDE:   1,
 					DNumTim: 15674904,
 					DEst:    "001",
-					DPunExp: "001",
+					DPunExp: "002",
 					DNumDoc: 777780,
 				},
 				GDatGralOpe: GDatGralOpe{
@@ -173,23 +186,22 @@ func main() {
 						CMoneOpe: "PYG",
 					},
 					GEmis: GEmis{
-						DRucEm:   80021477,
+						DRucEm:   "80021477",
 						DDVEmi:   3,
 						ITipCont: 2,
 					},
 					GDatRec: GDatRec{
-						INatRec:   2,
-						ITiOpe:    2,
-						CPaisRec:  "PRY",
-						DNomRec:   nombre,
-						ITipIDRec: 1,
-						DNumIDRec: numID,
+						INatRec:    1,
+						ITiOpe:     2,
+						CPaisRec:   "PRY",
+						DNomRec:    nombre,
+						ITiContRec: 1,
+						DRucRec:    ci,
+						DDVRec:     dv,
 					},
 				},
 				GDtipDE: GDtipDE{
-					GCamFE: GCamFE{
-						IIndPres: 2,
-					},
+					GCamFE: GCamFE{IIndPres: 2},
 					GCamCond: GCamCond{
 						ICondOpe: 1,
 						GPaConEIni: GPaConEIni{
@@ -199,23 +211,24 @@ func main() {
 						},
 					},
 					GCamItem: GCamItem{
-						DCodInt:     "REV0002",
-						DDesProSer:  "Intereses de prestamo activo",
+						DCodInt:     "001",
+						DDesProSer:  "Gastos Administrativos",
 						DCantProSer: 1,
 						GCamIVA: GCamIVA{
-							IAfecIVA:    1,
-							DTasaIVA:    10,
-							DBasGravIVA: 2535,
-							DLiqIVAItem: 254,
+							IAfecIVA: 1,
+							DTasaIVA: 10,
 						},
 						GValorItem: GValorItem{
-							DPUniProSer:    total,
-							DTotBruOpeItem: total,
+							DPUniProSer: total,
 							GValorRestaItem: GValorRestaItem{
 								DDescItem:       0,
 								DAntGloPreUniIt: 0,
-								DTotOpeItem:     total,
 							},
+						},
+					},
+					GCamEsp: GCamEsp{
+						GGrupAdi: GGrupAdi{
+							DVencPag: fecha,
 						},
 					},
 				},
@@ -223,7 +236,7 @@ func main() {
 		}
 
 		// Convertir la estructura a XML
-		xmlData, err := xml.MarshalIndent(rde, "", "  ")
+		xmlData, err := xml.Marshal(rde)
 		if err != nil {
 			fmt.Println("Error al generar el XML:", err)
 			return
@@ -232,12 +245,11 @@ func main() {
 		// Agregar el XML como una columna
 		newRecord := append(record, string(xmlData))
 
-		// Escribir el nuevo registro en el archivo de salida
+		// Escribir el nuevo registro en el archivo CSV
 		if err := writer.Write(newRecord); err != nil {
-			fmt.Println("Error al escribir en CSV:", err)
+			fmt.Println("Error al escribir el registro en CSV:", err)
 			return
 		}
 	}
-
-	fmt.Println("Archivo CSV con columna XML generado con éxito.")
+	fmt.Println("Archivo CSV creado exitosamente con la columna XML agregada.")
 }
