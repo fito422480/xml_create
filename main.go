@@ -57,16 +57,16 @@ type GDatRec struct {
 	ITiOpe     int    `xml:"iTiOpe"`
 	CPaisRec   string `xml:"cPaisRec"`
 	DNomRec    string `xml:"dNomRec"`
-	ITiContRec int    `xml:"iTiContRec"`
-	DRucRec    int    `xml:"dRucRec"`
-	DDVRec     int    `xml:"dDVRec"`
+	ITipIDRec  int 	`xml:"iTipIDRec"` 
+	DNumIDRec  int 	`xml:"dNumIDRec"`
+
 }
 
 type GDtipDE struct {
 	GCamFE   GCamFE   `xml:"gCamFE"`
 	GCamCond GCamCond `xml:"gCamCond"`
 	GCamItem GCamItem `xml:"gCamItem"`
-	GCamEsp  GCamEsp  `xml:"gCamEsp"`
+	//GCamEsp  GCamEsp  `xml:"gCamEsp"`
 }
 
 type GCamFE struct {
@@ -74,14 +74,13 @@ type GCamFE struct {
 }
 
 type GCamCond struct {
-	ICondOpe   int        `xml:"iCondOpe"`
-	GPaConEIni GPaConEIni `xml:"gPaConEIni"`
+	ICondOpe	int	`xml:"iCondOpe"`
+	GpagCred	GpagCred	`xml:"gPagCred"`
 }
 
-type GPaConEIni struct {
-	ITiPago    int     `xml:"iTiPago"`
-	DMonTiPag  float64 `xml:"dMonTiPag"`
-	CMoneTiPag string  `xml:"cMoneTiPag"`
+type GpagCred struct {
+	IcondCred  int     `xml:"iCondCred"`
+	DplazoCre  string  `xml:"dPlazoCre"`
 }
 
 type GCamItem struct {
@@ -100,23 +99,17 @@ type GCamIVA struct {
 }
 
 type GValorItem struct {
-	DPUniProSer     float64        `xml:"dPUniProSer"`
-	DTotBruOpeItem  float64        `xml:"dTotBruOpeItem"`
+	DPUniProSer     int        `xml:"dPUniProSer"`
+	DTotBruOpeItem	int        `xml:"dTotBruOpeItem"`	
 	GValorRestaItem GValorRestaItem `xml:"gValorRestaItem"`
 }
 
 type GValorRestaItem struct {
 	DDescItem       int `xml:"dDescItem"`
 	DAntGloPreUniIt int `xml:"dAntGloPreUniIt"`
+	DTotOpeItem     int `xml:"dTotOpeItem"`
 }
 
-type GCamEsp struct {
-	GGrupAdi GGrupAdi `xml:"gGrupAdi"`
-}
-
-type GGrupAdi struct {
-	DVencPag string `xml:"dVencPag"`
-}
 
 func main() {
 	// Abrir archivo CSV
@@ -156,16 +149,19 @@ func main() {
 	// Procesar registros (omitimos la primera fila que es el encabezado)
 	for _, record := range records[1:] {
 		// Verificar que el registro tenga al menos 5 columnas
-		if len(record) < 5 {
+		if len(record) < 6 {
 			fmt.Println("Registro incompleto, omitiendo:", record)
 			continue
 		}
 
 		fecha := record[0]
 		total, _ := strconv.ParseFloat(record[1], 64)
-		ci, _ := strconv.Atoi(record[2])
-		dv, _ := strconv.Atoi(record[3])
+		iva, _ := strconv.ParseFloat(record[2], 64)
+		ci, _ := strconv.Atoi(record[3])		
 		nombre := record[4]
+		//dv, _ := strconv.Atoi(record[5])
+
+		dBasGravIVA := (total - iva)
 
 		// Crear una estructura con los valores extraídos
 		rde := RDE{
@@ -175,7 +171,7 @@ func main() {
 					ITiDE:   1,
 					DNumTim: 15674904,
 					DEst:    "001",
-					DPunExp: "002",
+					DPunExp: "001",
 					DNumDoc: 777780,
 				},
 				GDatGralOpe: GDatGralOpe{
@@ -191,44 +187,43 @@ func main() {
 						ITipCont: 2,
 					},
 					GDatRec: GDatRec{
-						INatRec:    1,
+						INatRec:    2,
 						ITiOpe:     2,
 						CPaisRec:   "PRY",
 						DNomRec:    nombre,
-						ITiContRec: 1,
-						DRucRec:    ci,
-						DDVRec:     dv,
+						ITipIDRec: 1,
+						DNumIDRec: int(ci),
 					},
 				},
 				GDtipDE: GDtipDE{
-					GCamFE: GCamFE{IIndPres: 2},
+					GCamFE: GCamFE{
+						IIndPres: 2,
+					},
 					GCamCond: GCamCond{
-						ICondOpe: 1,
-						GPaConEIni: GPaConEIni{
-							ITiPago:    1,
-							DMonTiPag:  total,
-							CMoneTiPag: "PYG",
+						ICondOpe: 2,
+						GpagCred: GpagCred{
+							IcondCred:    1,
+							DplazoCre:  "21 dias",
 						},
 					},
 					GCamItem: GCamItem{
-						DCodInt:     "001",
+						DCodInt:     "REV0001",
 						DDesProSer:  "Gastos Administrativos",
 						DCantProSer: 1,
 						GCamIVA: GCamIVA{
 							IAfecIVA: 1,
 							DTasaIVA: 10,
+							DBasGravIVA: int(dBasGravIVA),
+							DLiqIVAItem: int(iva),
 						},
 						GValorItem: GValorItem{
-							DPUniProSer: total,
+							DPUniProSer: int(total),
+							DTotBruOpeItem: int(total),
 							GValorRestaItem: GValorRestaItem{
 								DDescItem:       0,
 								DAntGloPreUniIt: 0,
+								DTotOpeItem: int(total),
 							},
-						},
-					},
-					GCamEsp: GCamEsp{
-						GGrupAdi: GGrupAdi{
-							DVencPag: fecha,
 						},
 					},
 				},
